@@ -1,4 +1,3 @@
-
 #include <glut.h>
 int counterCOINS = 0;
 int health = 5;
@@ -12,12 +11,12 @@ int charY =320; // Initial Y position of the character
 int screenWidth = 800; // Screen width
 int screenHeight = 800; // Screen height
 int sx1=200;
-int sx2=500;
+int sx2=1100;
 bool isColliding = false; // New variable to track ongoing collision
 int sy=0;
 bool collectedThisFrame = false;
-bool coin1Collected = false;
 int speed = 30;
+bool gamePaused = false;
 void drawHeart() {
     glBegin(GL_POLYGON);
     glColor3f(0.89, 0.17, 0.18);
@@ -28,7 +27,6 @@ void drawHeart() {
   
     glEnd();
 }
-
 void changeColor() {
     if (collect) {
         glColor3f(1, 1, 1);
@@ -81,7 +79,6 @@ void drawCounterCoins() {
     gluDisk(quadric2, 0, radius2, slices2, 1);
     glPopMatrix();
 }
-
 void drawCoins() {
     glBegin(GL_QUADS);
     changeColor();
@@ -134,14 +131,12 @@ void drawChar() {
     glVertex2i(charX - 64, charY - 320);
     glEnd();
 }
-
 void drawText(float x, float y, const char* text) {
     glRasterPos2f(x, y);
     for (int i = 0; text[i] != '\0'; ++i) {
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
     }
 }
-
 void drawNumber(float x, float y, int value) {
     glRasterPos2f(x, y);
 
@@ -177,23 +172,22 @@ void checkCollection() {
         }
     }
     // Check if the character is within the bounding box of the second coin
-    else if (charX + 40 >= sx2 && charX - 40 <= sx2 + 100 && charY + 220 >= sy && charY <= sy + 530) {
-        if (!collectedThisFrame) {
-            collect = true;
-            counterCOINS++;
-            collectedThisFrame = true;
-            speed -= 1;
-            if (speed == 0) {
-                speed = 30;
-            }
-        }
-    }
+  //  else if (charX + 40 >= sx2 && charX - 40 <= sx2 + 100 && charY + 220 >= sy && charY <= sy + 530) {
+    //    if (!collectedThisFrame) {
+    //        collect = true;
+   //         counterCOINS++;
+  //          collectedThisFrame = true;
+  //          speed -= 1;
+   //         if (speed == 0) {
+   //             speed = 30;
+   //         }
+ //       }
+ //   }
     else {
         collect = false;
         collectedThisFrame = false;
     }
 }
-
 void checkCollision() {
     if (charX + 40 >= collX && charX - 40 <= collX + 100 && charY + 220 >= sy && charY <= sy + 530) {
         if (!isColliding && health > 0) {  // Check if health is greater than 0
@@ -210,97 +204,105 @@ void checkCollision() {
         isColliding = false;
     }
 }
+void drawStopText() {
+    drawText(250, 400, "GAME PAUSED");
+    drawText(250, 350, "Press 'v' to Resume");
+}
+void drawGameOverText() {
+    glColor3f(1.0, 0.0, 0.0);
+    drawText(300, 400, "GAME OVER!");
+    drawText(300, 350, "Press Esc to Exit");
+    drawText(250, 300, "Press Enter for New Game");
+}
+void gameRun() {
+    glBegin(GL_QUADS);
+    glColor3f(0.05, 0.63, 0.91);
+    glVertex2f(0, 0);
+    glVertex2f(screenWidth, 0);
+    glVertex2f(screenWidth, screenHeight);
+    glVertex2f(0, screenHeight);
+    glEnd();
+    drawHeart();
+    // Draw counter coins
+    drawCounterCoins();
+    glPushMatrix();
+    glTranslated(sx1 - 100, sy, 0);
+    drawCoins();
+    glPopMatrix();
+
+    //  glPushMatrix();
+    //  glTranslated(sx2-100 , sy, 0);
+   //  drawCoins();
+  //  glPopMatrix();
+    glPushMatrix();
+
+    // Draw character
+    drawChar();
+
+    // Draw counterCOINS value
+    glColor3f(1.0, 0.0, 0.0);
+    drawNumber(700, 740, counterCOINS);
 
 
+    glPushMatrix();
+    glTranslated(collX - 600, sy, 0);
+    drawCollision();
+    glPopMatrix();
+    glColor3f(1.0, 0.0, 0.0);
+    drawNumber(200, 740, health);
 
+    glFlush();
+}
+void startScreen() {
+    // Start screen with green background
+    glColor3f(1.00, 0.00, 0.00);
+    glBegin(GL_QUADS);
+    glVertex2f(0, 0);
+    glVertex2f(screenWidth, 0);
+    glVertex2f(screenWidth, screenHeight);
+    glVertex2f(0, screenHeight);
+    glEnd();
 
+    // Green rectangle
+    glColor3f(0.00, 0.48, 0.24);
+    glBegin(GL_QUADS);
+    glVertex2f(200, 200);
+    glVertex2f(600, 200);
+    glVertex2f(600, 600);  // Increased the height
+    glVertex2f(200, 600);  // Increased the height
+    glEnd();
 
-
+    // Draw text on the red rectangle
+    glColor3f(0.0, 0.0, 0.0);
+    drawText(280, 500, "**Super Pedro Game**");
+    drawText(280, 450, "Press Enter to Start or Click Left");
+    drawText(280, 400, "Press Esc to Exit");
+    drawText(280, 350, "Use Arrow Keys or Mouse to Move");
+}
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
     if (gameOver) {
-        glColor3f(1.0, 0.0, 0.0);
-        drawText(300, 400, "GAME OVER!");
-        drawText(300, 350, "Press Esc to Exit");
-        drawText(250, 300, "Press Enter for New Game");
+        drawGameOverText();
+    }
+    else if (gamePaused) {
+        drawStopText();
     }
     else if (gameStarted) {
-        glBegin(GL_QUADS);
-        glColor3f(0.05, 0.63, 0.91);
-        glVertex2f(0, 0);
-        glVertex2f(screenWidth, 0);
-        glVertex2f(screenWidth, screenHeight);
-        glVertex2f(0, screenHeight);
-        glEnd();
-        drawHeart();
-        // Draw counter coins
-        drawCounterCoins();
-        glPushMatrix();
-        glTranslated(sx1-100 , sy, 0);
-        drawCoins();
-        glPopMatrix();
-
-        glPushMatrix();
-        glTranslated(sx2-400 , sy, 0);
-       drawCoins();
-      glPopMatrix();
-        glPushMatrix();
-        
-        // Draw character
-        drawChar();
-       
-        // Draw counterCOINS value
-        glColor3f(1.0, 0.0, 0.0);
-        drawNumber(700, 740, counterCOINS);
-
-     
-        glPushMatrix();
-        glTranslated(collX-600 , sy, 0);
-        drawCollision();
-        glPopMatrix();
-        glColor3f(1.0, 0.0, 0.0);
-        drawNumber(200, 740, health);
-
-        glFlush();
+        gameRun();
     }
    
     else {
-        // Start screen with green background
-        glColor3f(1.00, 0.00, 0.00);
-        glBegin(GL_QUADS);
-        glVertex2f(0, 0);
-        glVertex2f(screenWidth, 0);
-        glVertex2f(screenWidth, screenHeight);
-        glVertex2f(0, screenHeight);
-        glEnd();
-
-        // Green rectangle
-        glColor3f(0.00, 0.48, 0.24);
-        glBegin(GL_QUADS);
-        glVertex2f(200, 200);
-        glVertex2f(600, 200);
-        glVertex2f(600, 600);  // Increased the height
-        glVertex2f(200, 600);  // Increased the height
-        glEnd();
-
-        // Draw text on the red rectangle
-        glColor3f(0.0, 0.0, 0.0);
-        drawText(280, 500, "**Super Pedro Game**");
-        drawText(280, 450, "Press Enter to Start or Click Left");
-        drawText(280, 400, "Press Esc to Exit");
-        drawText(280, 350, "Use Arrow Keys or Mouse to Move");
+        startScreen();
     }
 
     glFlush();
 }
-
 void passiveMotion(int x, int y) {
     // Update character X and Y positions based on mouse movement
     charX = x;
     charY = screenHeight - y; // Invert Y-axis for OpenGL coordinate system
     glutPostRedisplay();
 }
-
 void specFuncUp(int key, int x, int y) {
     switch (key) {
     case GLUT_KEY_UP: charY -= 400; break;
@@ -309,7 +311,6 @@ void specFuncUp(int key, int x, int y) {
     }
     glutPostRedisplay();
 }
-
 void mouseClick(int button, int state, int x, int y) {
     switch (button) {
     case GLUT_LEFT_BUTTON:
@@ -320,7 +321,6 @@ void mouseClick(int button, int state, int x, int y) {
     }
     glutPostRedisplay();
 }
-
 void keyboard(unsigned char key, int x, int y) {
     switch (key) {
     case 13: // Enter key
@@ -335,18 +335,28 @@ void keyboard(unsigned char key, int x, int y) {
     case 27: // Escape key
         exit(0);
         break;
+    case 'x':
+        // Press 'x' to toggle the pause state
+        gamePaused = !gamePaused;
+        break;
+    case 'v':
+        // Press 'v' to resume the game
+        gamePaused = false;
+        break;
     }
     glutPostRedisplay();
 }
-
-
 void Timer(int valu) {
     sx1 -= 10 ;
     sx2 -= 10 ;
     collX -= 10;
+   if (gamePaused) {
+      glutTimerFunc(speed, Timer, 0);
+       return;
+    }
     if ( sx1 < -200) {
         sx1=800;
-        coin1Collected = false;
+       
     }
     if (sx2 < -200) {
         sx2 = 800;
@@ -397,7 +407,6 @@ void specialKeys(int key, int x, int y) {
 
     glutPostRedisplay();
 }
-
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitWindowSize(screenWidth, screenHeight);
@@ -418,4 +427,5 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
 
